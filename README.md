@@ -22,6 +22,9 @@ The data folder should look something like this
     EKKOTools/data/JRH_2101_summary_scankey.xlsx
 
 <br>
+Then run the following code to see if all of your data is ingested correctly.
+
+<br>
 
     ss = GetAllEKKOScanSummaries(Path('./data/'))
         
@@ -29,19 +32,8 @@ The data folder should look something like this
         for well in s.wells:
             print(f'{s.name.ljust(25)}\t{well.name}\t{well.analyte}')
 
-<br>
-The behavior of this program when the product of `PYMP_NUM_THREADS` and `nprocs` is greater than the number of available CPU cores of the host machine is unknown.
-<br>
+
 <br> 
 
-## Current Limitations
-`CRESTPy` does not handle charged molecules. <br>
-`CRESTPy` will only return conformers which are energy minima (whether local or global). Transition state structures between conformations are not found. <br>
-`CRESTPy` currently returns conformers within 6 kcal/mol of the ground state.<br>
-`CREST` output using SDF files will not return the energy <br>
-`CRESTPy` 
-
-
-## Future Features
-Conformer sorting<br>
-Conformer energy window expanded beyond 6kcal/mol <br>
+## Current Limitations and Future Features
+`EKKOTools` currently does not read the well labels section of the scan summary cdxs files. A future version will attempt to map the well labels to the EKKOTools.EKKOScanFormats.Well object, which has an attribute "analyte".
