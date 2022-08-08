@@ -3,3 +3,5 @@ tests.py
 /structures/
 /__pycache__/
 /build/
+/data_gen/
+/data_gen/*
