@@ -93,19 +93,19 @@ def _verbose_statistics_printer(
         best_wells_str = ' '.join([str(t.parent_scanfile.name[:9]) + " " + t.name for t in best_wells])
         nSpectra = len(best_wells)
 
-        # Colors for highlighting certain bad things
+        # If the avg CD value is low, warning
         if abs(best_avg) < 15:
             avg_print = f'{bcolors.WARNING}{avg_print}{bcolors.ENDC}'
         
-        
+        # Percent stddev
         if abs(percent_std_dev) > 8 and abs(percent_std_dev) < 15:
             percent_std_dev = f'{bcolors.WARNING}{str(percent_std_dev).rjust(7) + "%"}{bcolors.ENDC}'
-        elif abs(percent_std_dev) > 15:
+        elif abs(percent_std_dev) > 15 or str(percent_std_dev) == 'nan':
             percent_std_dev = f'{bcolors.FAIL}{str(percent_std_dev).rjust(7) + "%"}{bcolors.ENDC}'
         else:
-            percent_std_dev = str(percent_std_dev).rjust(7) + '%'
+            percent_std_dev = f'{bcolors.OKGREEN}{str(percent_std_dev).rjust(7)}%{bcolors.ENDC}'
 
-
+        # Print formatted string
         print(f'{analyte_name}:\tstddev: {stddev_print}\t\tavg: {avg_print}\trel_stddev: {percent_std_dev}\tnSpectra: {nSpectra}\tBest Wells: {best_wells_str}')
 
 

@@ -1,14 +1,10 @@
 from EKKOTools.EKKOScanFormats import Well, EKKOScanSummary
 from pathlib import Path
-from typing import List
-
-from itertools import groupby
 
 def GetSpectrumDifferencesWells(
     w1: Well,
     w2: Well,
-    compare = 'cd'
-) -> dict:
+    compare = 'cd') -> dict:
     '''Gets the difference of some property the CD spectra of two EKKO formatted wells. 
     
     Compare: str
@@ -32,7 +28,7 @@ def GetSpectrumDifferencesWells(
     else:
         raise Exception
 
-def GetAllEKKOScanSummaries(p: Path) -> List[Path]:
+def GetAllEKKOScanSummaries(p: Path) -> list[EKKOScanSummary]:
     '''Returns all EKKOScanSummaries in a directory'''
     assert(p.is_dir())
     return [EKKOScanSummary(x) for x in p.glob('*.cdxs')]
@@ -40,39 +36,11 @@ def GetAllEKKOScanSummaries(p: Path) -> List[Path]:
 def FixScanKeys(p: Path):
     '''Fixes the scan keys to be csv files'''
     pass
-    
-def DEPRECATED_GetAllWellsOfAnalyteFromScanSummaries(
-    scan_summaries: list = None,
-    analyte: str = '', 
-    spectra_type = 'cd') -> List[dict]:
-    '''Gets all wells from a list of scan summaries that have the same analyte'''
-    
-    spectra = []
-
-    for summary in scan_summaries:
-        for well in summary.wells:
-            if well.analyte == analyte:
-
-                if spectra_type.casefold() == 'cd':
-                    spectrum = well.get_CD()
-
-                elif spectra_type.casefold() == 'abs':
-                    spectrum = well.get_abs()
-
-                elif spectra_type.casefold() == 'cd_per_abs':
-                    spectrum = well.get_CD_per_abs()
-
-                else:
-                    raise Exception
-
-                spectra.append(spectrum)
-
-    return spectra
 
 def GetAllSpectraFromWells(
     wells: list[Well] = None, 
     spectra_type = 'cd',
-    all_same_analyte = True) -> List[dict]:
+    all_same_analyte = True) -> list[dict]:
     '''Given a list of wells of the same analyte, return a list of spectra dictionaries.
         
         The list of wells are checked to ensure they have the same analyte. The return
@@ -109,7 +77,7 @@ def GetAllSpectraFromWells(
 
 def GetAllWells(
     scan_summaries: list = None,
-    analyte: str = '') -> List[dict]:
+    analyte: str = '') -> list[dict]:
     '''Searches through all scan summaries for wells with a particular analyte'''
     wells = []
     for summary in scan_summaries:
@@ -117,3 +85,24 @@ def GetAllWells(
             if well.analyte == analyte:
                 wells.append(well)
     return wells
+
+def GetAllAnalytes(folder: Path) -> list[str]:
+    '''Gets all of the analytes of all the scan summaries in 
+        the provided directory. Returns a set of all analytes'''
+    if not isinstance(folder, Path):
+        folder = Path(folder) # Eventually this should be a try/except but I don't know what exceptions we'll have
+    assert(folder.is_dir())
+
+    analytes = set()
+    ss = GetAllEKKOScanSummaries(folder)
+
+    for summary in ss:
+        for well in summary.wells:
+            analytes.add(well.analyte)
+
+    return analytes
+
+if __name__ == "__main__":
+    p = Path('./data/')
+    print(p.absolute())
+    print(GetAllAnalytes(p))
