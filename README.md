@@ -22,6 +22,13 @@ The data folder should look something like this
     EKKOTools/data/JRH_2101_summary.cdxs
     EKKOTools/data/JRH_2101_summary_scankey.xlsx
 
+Each scan key should be formatted like so
+
+    A1,R-methylbenzylamine
+    A2,S-methylbenzelamine
+    A3,analyte3
+    ...
+
 <br>
 Then run the following code to see if all of your data is ingested correctly.
 
