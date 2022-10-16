@@ -5,8 +5,9 @@
 `EKKOTools` is a package which provides useful tools for ingesting and analyzing the summary scan files produced by the EKKO CD Microplate Reader
 
 ## Installation
-Install the package using pip. Make sure you are in the parent directory of the project (the one that contains the setup.py)
+Clone the repository and cd into the root directory which contains setup.py
 
+    cd EKKOTools/
     pip install .
 
 
