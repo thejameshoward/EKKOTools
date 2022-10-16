@@ -181,7 +181,9 @@ def PlotAllSpectra(
     title = '', 
     xlim: list = None, 
     ylim: list = None, 
-    all_same_analyte = True):       
+    all_same_analyte = True, 
+    return_fig = False, 
+    **kwargs):       
     '''Plots all the spectra (cd, abs, cd_per_abs) for a list of wells'''
 
     # Create a subplot with 1 row and 2 columns
@@ -223,6 +225,32 @@ def PlotAllSpectra(
         y = [float(z) for z in spectrum.values()]
         axs[2].plot(x,y)
 
+    if return_fig:
+        return fig, axs
+
+    plt.show()
+
+def PlotAllAbsorbance(
+    wells: list[Well] = [], 
+    title = '', 
+    xlim: list = None, 
+    ylim: list = None, 
+    all_same_analyte = True):       
+    '''
+    Plots all the absorbance spectra for a list of wells
+    '''
+    fig, ax = plt.subplots()
+    ax.set_title(title)
+    ax.set_xlabel("Wavelength (nm)")
+    ax.set_ylabel("Absorbance")
+    if xlim is not None:
+        ax.set_xlim(xlim)
+    for spectrum in GetAllSpectraFromWells(wells, spectra_type='cd', all_same_analyte=all_same_analyte):
+        spectrum = PruneDictionaryKeys(spectrum, xlim)
+        x = [float(t) for t in spectrum.keys()]
+        y = [float(z) for z in spectrum.values()]
+        ax.plot(x,y)
+    
     plt.show()
 
 def PruneDictionaryKeys(d: dict = None, range: list = None):

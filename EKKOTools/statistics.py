@@ -1,32 +1,24 @@
 
 from EKKOTools.EKKOScanFormats import EKKOScanSummary, Well
 from EKKOTools.plotting import PlotMultipleSpectra
+from EKKOTools.utilities import GetAllSpectraFromWells
+from EKKOTools.utilities import bcolors, SpectraType
 
 from itertools import combinations
 
 import pandas as pd
-import numpy as np
 
-from EKKOTools.utilities import GetAllSpectraFromWells
-
-class bcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKCYAN = '\033[96m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-    NONE = ''
-
-def CalculateStdSpectra(spectra: list[dict], wl: int = 520, spectra_type = None) -> float:
-    '''For a list of spectra, calculate the average std deviation for a given wavelength
+def CalculateStdSpectra(
+    spectra: list[dict], 
+    wl: int = 520, 
+    spectra_type: SpectraType = None) -> float:
+    '''
+    For a list of spectra, calculate the std deviation for a given wavelength.
     
-        Can be used on spectra (dictionaries with wavelengths as keys and intensities as values) directly
-        or on Well objects from EKKO tools. If using well objects, the requested spectra_type (cd, abs, or cd_per_abs
-        must be requested'''
+    Can be used on spectra (dictionaries with wavelengths as keys and intensities as values) directly
+    or on Well objects from EKKO tools. If using well objects, the requested spectra_type (cd, abs, or cd_per_abs
+    must be requested
+    '''
 
     if spectra_type == None:
         for s in spectra:
@@ -39,10 +31,19 @@ def CalculateStdSpectra(spectra: list[dict], wl: int = 520, spectra_type = None)
     df = pd.DataFrame(spectra)
     return df.describe().transpose()['std'].to_dict()[str(wl)]
 
-def CalculateAvgSpectra(spectra: list[dict], wl: int = 520, spectra_type = None) -> float:
-    '''For a list of spectra or wells, calculate the average value for a given wavelength
-        if wells are supplied, a spectral type must be indicated (cd, abs, or cd_per_abs)
-        after which the requested spectra type is obtained from the Well objects'''
+def CalculateAvgSpectra(
+    spectra: list[dict], 
+    wl: int = 520, 
+    spectra_type = None) -> float:
+    
+    '''
+    For a list of spectra, calculate the average intensity value for a given wavelength.
+    
+    Can be used on spectra (dictionaries with wavelengths as keys and intensities as values) directly
+    or on Well objects from EKKO tools. If using well objects, the requested spectra_type (cd, abs, or cd_per_abs
+    must be requested
+    '''
+
     if spectra_type == None:
         for s in spectra:
             assert(isinstance(s, dict))
@@ -54,9 +55,38 @@ def CalculateAvgSpectra(spectra: list[dict], wl: int = 520, spectra_type = None)
     df = pd.DataFrame(spectra)
     return df.describe().transpose()['mean'].to_dict()[str(wl)]
 
-def PickN(l: list[Well], n = 2, wl = 520, spectra_type = None, verbose = False) -> tuple:
-    '''Picks the n-closest spectra in a list at some wavelength by calculating the lowest
-        standard deviation at of the spectra at the wavellength'''
+def PickN(
+    l: list[Well], 
+    n = 2, 
+    wl = 520, 
+    spectra_type: SpectraType = None, 
+    verbose = False) -> tuple[Well]:
+    '''
+    Picks the n-closest spectra in a list at some wavelength by calculating the lowest
+    standard deviation of the spectra at the selected wavelength.
+    
+    Parameters
+    ----------
+    l: list[Well]
+        List which contains the EKKOTools.EKKOScanFormats.Well objects
+
+    n: int
+        Number of spectra which are to be selected
+
+    wl: float
+        Wavelength at which the standard deviation is to be calculated
+
+    spectra_type: SpectraType
+        'cd', 'abs', or 'cd_per_abs'
+
+    verbose: Bool
+        Prints the details of the spectrum selection process
+
+    Returns
+    ----------
+    best: iterable[Well]
+        The n-number of spectra which provide the lowest standard deviation 
+    '''
     combos = list(combinations(l, n))
 
     if len(l) < n:
@@ -85,28 +115,31 @@ def _verbose_statistics_printer(
     best_stddev: float = None, 
     best_avg: float = None, 
     best_wells: list[Well] = None):
-        # Formatting for printing
-        analyte_name = str(analyte).ljust(4)
-        stddev_print = str(round(best_stddev, 3)).rjust(7)
-        avg_print = str(round(best_avg,2)).rjust(7)
-        percent_std_dev = round((abs(best_stddev) / abs(best_avg)) * 100, 2)
-        best_wells_str = ' '.join([str(t.parent_scanfile.name[:9]) + " " + t.name for t in best_wells])
-        nSpectra = len(best_wells)
+    '''
+    Prints formatted text for the PickN function if given an analyte name, best standard deviation
+    '''
+    # Formatting for printing
+    analyte_name = str(analyte).ljust(4)
+    stddev_print = str(round(best_stddev, 3)).rjust(7)
+    avg_print = str(round(best_avg,2)).rjust(7)
+    percent_std_dev = round((abs(best_stddev) / abs(best_avg)) * 100, 2)
+    best_wells_str = ' '.join([str(t.parent_scanfile.name[:9]) + " " + t.name for t in best_wells])
+    nSpectra = len(best_wells)
 
-        # If the avg CD value is low, warning
-        if abs(best_avg) < 15:
-            avg_print = f'{bcolors.WARNING}{avg_print}{bcolors.ENDC}'
-        
-        # Percent stddev
-        if abs(percent_std_dev) > 8 and abs(percent_std_dev) < 15:
-            percent_std_dev = f'{bcolors.WARNING}{str(percent_std_dev).rjust(7) + "%"}{bcolors.ENDC}'
-        elif abs(percent_std_dev) > 15 or str(percent_std_dev) == 'nan':
-            percent_std_dev = f'{bcolors.FAIL}{str(percent_std_dev).rjust(7) + "%"}{bcolors.ENDC}'
-        else:
-            percent_std_dev = f'{bcolors.OKGREEN}{str(percent_std_dev).rjust(7)}%{bcolors.ENDC}'
+    # If the avg CD value is low, warning
+    if abs(best_avg) < 15:
+        avg_print = f'{bcolors.WARNING}{avg_print}{bcolors.ENDC}'
+    
+    # Percent stddev
+    if abs(percent_std_dev) > 8 and abs(percent_std_dev) < 15:
+        percent_std_dev = f'{bcolors.WARNING}{str(percent_std_dev).rjust(7) + "%"}{bcolors.ENDC}'
+    elif abs(percent_std_dev) > 15 or str(percent_std_dev) == 'nan':
+        percent_std_dev = f'{bcolors.FAIL}{str(percent_std_dev).rjust(7) + "%"}{bcolors.ENDC}'
+    else:
+        percent_std_dev = f'{bcolors.OKGREEN}{str(percent_std_dev).rjust(7)}%{bcolors.ENDC}'
 
-        # Print formatted string
-        print(f'{analyte_name}:\tstddev: {stddev_print}\t\tavg: {avg_print}\trel_stddev: {percent_std_dev}\tnSpectra: {nSpectra}\tBest Wells: {best_wells_str}')
+    # Print formatted string
+    print(f'{analyte_name}:\tstddev: {stddev_print}\t\tavg: {avg_print}\trel_stddev: {percent_std_dev}\tnSpectra: {nSpectra}\tBest Wells: {best_wells_str}')
 
 
 if __name__ == "__main__":
