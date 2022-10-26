@@ -1,6 +1,7 @@
 from EKKOTools.EKKOScanFormats import Well, EKKOScanSummary
 from pathlib import Path
 from enum import Enum
+import pandas as pd
 
 class bcolors:
     HEADER = '\033[95m'
@@ -97,20 +98,20 @@ def GetAllSpectraFromWells(
             analytes = [q.analyte for q in wells]
             assert(all(analytes[0] == x for x in analytes))
         except:
-            raise ValueError('All analytes must be identical')
+            print('WARNING: All analytes are not the same')
 
     spectra = []
 
     for well in wells:
 
         if spectra_type.casefold() == 'cd':
-            spectrum = well.get_CD()
+            spectrum = well.CD
 
         elif spectra_type.casefold() == 'abs':
-            spectrum = well.get_abs()
+            spectrum = well.ABS
 
         elif spectra_type.casefold() == 'cd_per_abs':
-            spectrum = well.get_CD_per_abs()
+            spectrum = well.CD_PER_ABS
 
         else:
             raise Exception('Only CD, ABS, and CD_per_ABS are acceptable spectral types')
@@ -148,3 +149,27 @@ def GetAllAnalytes(folder: Path) -> set[str]:
             analytes.add(well.analyte)
 
     return analytes
+
+def WriteWellsToXLSX(
+    wells: list[Well], 
+    filename: Path) -> None:
+    '''
+    Writes the well spectra to a nicely formatted XLSX file
+    '''
+
+    assert(filename.suffix == '.xlsx')
+
+    wavelengths = [float(x) for x in wells[0].CD.keys()]
+
+    df = pd.DataFrame({'WAVELENGTHS':wavelengths})
+
+    for well in wells:
+        df[f'CD_{well.name}'] = well.CD.values()
+    for well in wells:
+        df[f'ABS_{well.name}'] = well.ABS.values()
+
+    df.to_excel(filename, index=False)
+
+#TODO
+def MakeCalibrationCurve():
+    pass

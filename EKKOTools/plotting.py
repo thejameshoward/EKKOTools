@@ -1,17 +1,10 @@
 import math
-import os
-import numpy as np
 import matplotlib.pyplot as plt
-
-import matplotlib
 
 from pathlib import Path
 
-from pprint import pprint
-
 from EKKOTools.EKKOScanFormats import EKKOScanSummary, Well
 from EKKOTools.utilities import GetAllSpectraFromWells
-#from EKKOTools.JascoScanFile import JascoScanFile
 
 def PruneNAN(data: dict):
     '''Removes values from a dictionary in which the values or the keys are nan'''
@@ -39,7 +32,6 @@ def PlotSpectrum(
     data = PruneNAN(data)
 
     x, y = list(float(key) for key in data.keys()), list(float(value) for value in data.values())
-
 
     print(" should mention that dictionaries also have a method .get() which accepts a default parameter (itself defaulting to None), so that kwargs.get('errormessage') returns the value if that key exists and None otherwise (similarly kwargs.get('errormessage', 17) does what you might think it does). When you don't care about the difference between the key existing and having None as a value or the key not existing, this can be handy.")
 
@@ -76,16 +68,16 @@ def PlotSpectrum(
         d = plotwavelengths
         try:
             for wl in d:
-                plt.plot(wl, cd[wl], marker='.', color='red')
+                plt.plot(wl, y[wl], marker='.', color='red')
                 plt.text(wl + (wl * 0.025), data[wl] + (data[wl] * 0.025), "{} nm, {} mDeg".format(
                     str(wl),  # Wavelength
                     str(math.ceil(data[wl]*100)/100)),  # CD rounded up at the second decimal point
                     horizontalalignment='left')
         except(TypeError):
             plt.plot(d, data[d], marker='.', color='red')
-            plt.text(d + (d * 0.025), cd[d] + (cd[d] * 0.025), "{} nm, {} mDeg".format(
+            plt.text(d + (d * 0.025), y[d] + (y[d] * 0.025), "{} nm, {} mDeg".format(
                 str(d),  # Wavelength
-                str(math.ceil(cd[d]*100)/100)),  # CD rounded up at the second decimal point
+                str(math.ceil(y[d]*100)/100)),  # CD rounded up at the second decimal point
                 horizontalalignment='left')
 
     plt.ylabel("CD (mDeg)")
@@ -186,15 +178,20 @@ def PlotAllSpectra(
     **kwargs):       
     '''Plots all the spectra (cd, abs, cd_per_abs) for a list of wells'''
 
+    # Defining fonts
+    plt.rcParams.update({'font.size': 11, 'font.sans-serif': 'Helvetica'})
+    #tick_font = {'font.size': 14, 'font.sans-serif': 'Helvetica'}
+    label_font = {'fontsize': 13, 'fontname': 'Helvetica'}
+
     # Create a subplot with 1 row and 2 columns
     fig, axs = plt.subplots(nrows=1, ncols=3, sharex=True, sharey=False)
-    fig.set_size_inches(16, 7)
+    fig.set_size_inches(17, 6)
 
-    plt.suptitle(title)
+    plt.suptitle(title, **label_font)
 
-    axs[0].set_title("CD")
-    axs[0].set_xlabel("Wavelength (nm)")
-    axs[0].set_ylabel("CD (mdeg)")
+    axs[0].set_title("CD", **label_font)
+    axs[0].set_xlabel("Wavelength (nm)", **label_font)
+    axs[0].set_ylabel("CD (mdeg)", **label_font)
     if xlim is not None:
         axs[0].set_xlim(xlim)
     for spectrum in GetAllSpectraFromWells(wells, spectra_type='cd', all_same_analyte=all_same_analyte):
@@ -203,9 +200,9 @@ def PlotAllSpectra(
         y = [float(z) for z in spectrum.values()]
         axs[0].plot(x,y)
 
-    axs[1].set_title("Absorbance")
-    axs[1].set_xlabel("Wavelength (nm)")
-    axs[1].set_ylabel("Absorbance")
+    axs[1].set_title("Absorbance", **label_font)
+    axs[1].set_xlabel("Wavelength (nm)", **label_font)
+    axs[1].set_ylabel("Absorbance", **label_font)
     if xlim is not None:
         axs[1].set_xlim(xlim)
     for spectrum in GetAllSpectraFromWells(wells, spectra_type='abs', all_same_analyte=all_same_analyte):
@@ -214,9 +211,9 @@ def PlotAllSpectra(
         y = [float(z) for z in spectrum.values()]
         axs[1].plot(x,y)
     
-    axs[2].set_title("G-factor")
-    axs[2].set_xlabel("Wavelength (nm)")
-    axs[2].set_ylabel("CD (mdeg / abs)")
+    axs[2].set_title("G-factor", **label_font)
+    axs[2].set_xlabel("Wavelength (nm)", **label_font)
+    axs[2].set_ylabel("CD (mdeg / abs)", **label_font)
     if xlim is not None:
         axs[2].set_xlim(xlim)
     for spectrum in GetAllSpectraFromWells(wells, spectra_type='cd_per_abs', all_same_analyte=all_same_analyte):

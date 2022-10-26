@@ -1,5 +1,3 @@
-from multiprocessing.sharedctypes import Value
-from typing import Type
 import pandas as pd
 import re
 import numpy as np
@@ -19,7 +17,12 @@ possible_wells = ['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1',
                   'A12', 'B12', 'C12', 'D12', 'E12', 'F12', 'G12', 'H12']
 
 
-class Well():  
+class Well():
+    '''
+    Class for handling information within a well. Instatiation is not done
+    directly, but rather from the EKKOScanSummary class which formats the 
+    dataframe in a specific way for ingestion by the Well class.
+    '''
     def __init__(self, df: pd.DataFrame, parent_scanfile: str,  analyte_name = None):
         self.df = df.reset_index()
         if not self.df["WL"][0] in possible_wells:
@@ -31,8 +34,15 @@ class Well():
             self.df = self.df.set_index("WL")
             self.__analyte = analyte_name
 
+            # CD attribute which can hold user-defined 
+            # spectra which are dictionaries that have 
+            # wavelength:intensity key:value pairs
+            self.CD = self.get_CD()
+            self.ABS = self.get_abs()
+            self.CD_PER_ABS = self.get_CD_per_abs()
+
     @property
-    def analyte(self):
+    def analyte(self) -> str:
         return self.__analyte
 
     @analyte.setter
@@ -64,16 +74,17 @@ class EKKOScanSummary():
             file = Path(file)
             if file.is_dir():
                 raise ValueError(f"Path handed to EKKOScanSummary is a directory, not a dir!")
+            if file.suffix != ".cdxs" or file.suffix != ".CDXS":
+                raise ValueError(f"The file {self.file.name} is not formatted like a EKKO CD Wellplate Reader cdxs file")
 
         self.file = file
 
-        if self.file.suffix == ".cdxs" or ".CDXS":
+        try:
             self.content = pd.read_csv((self.file), header = None)
             self.content = self.content[0].str.split('\t', expand=True)
-            if self.content[0][0] != "Hinds Instruments CD Reader":
-                raise ValueError(f"The file {self.file.name} is not formatted like a EKKO CD Wellplate Reader cdxs file")
-        else:
-            raise ValueError(f"The file {self.file.name} is not a cdxs file")
+            assert(self.content[0][0] == "Hinds Instruments CD Reader")
+        except:
+            raise ValueError(f"The file {self.file.name} is not formatted like a EKKO CD Wellplate Reader cdxs file")
 
         if self._has_scan_key():
             self.wells = self._assign_wells_from_scan_key()
@@ -88,7 +99,9 @@ class EKKOScanSummary():
 
     @property
     def blocksize(self):
-        '''Length of the well scans which is 1 for each wavelength plus the well label (A1, A2, H3, etc...)'''
+        '''
+        Length of the well scans which is 1 for each wavelength plus the well label (A1, A2, H3, etc...)
+        '''
         digits = re.findall(r'\b\d+\b', self.content[0][4])
         block_size = (int(digits[1]) - int(digits[0])) / int(digits[2]) + 2
         return int(block_size)
@@ -102,6 +115,9 @@ class EKKOScanSummary():
 
     @property
     def scan_list(self):
+        '''
+        List of unformatted scan pd.DataFrame objects which can be interpreted by the EKKOScanFormats.Well class
+        '''
         scan_list = np.array_split(self.scandata, len(
             self.scandata["WL"])/self.blocksize)
         return scan_list
