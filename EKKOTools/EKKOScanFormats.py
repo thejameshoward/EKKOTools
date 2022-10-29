@@ -139,7 +139,8 @@ class EKKOScanSummary():
 
     def get_specific_well(self, well_label: str = None) -> Well:
         '''Returns the first Well object of the EKKOScanSummary which has the name well_label'''
-        assert(well_label in possible_wells)
+        if well_label not in possible_wells:
+            raise ValueError(f'{well_label} is not a valid well label.')
 
         for well in self.wells:
             if well.name == well_label:

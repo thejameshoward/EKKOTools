@@ -38,7 +38,6 @@ def PlotSpectrum(
     # xlimits
     try:
         xlimits = kwargs.pop('xlimits')
-        assert(isinstance(xlimits, list))
         xlim, xlim2 = xlimits[0], xlimits[1]
     except:
         print('xlimits variable not understood, reverting to default x limits')
@@ -47,7 +46,6 @@ def PlotSpectrum(
     # Determining ylimits
     try:
         ylimits = kwargs.pop('ylimits')
-        assert(isinstance(ylimits, list))
         ylim, ylim2 = ylimits[0], ylimits[1]
     except:
         print('ylimits variable not understood, reverting to default y limits')

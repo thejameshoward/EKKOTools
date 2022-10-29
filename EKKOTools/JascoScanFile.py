@@ -1,8 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Jul 22 12:18:22 2021
-@author: James Howard
-"""
+# Deprecated
 
 import os
 import pandas as pd

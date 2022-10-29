@@ -2,7 +2,7 @@
 from EKKOTools.EKKOScanFormats import EKKOScanSummary, Well
 from EKKOTools.plotting import PlotMultipleSpectra
 from EKKOTools.utilities import GetAllSpectraFromWells
-from EKKOTools.utilities import bcolors, SpectraType
+from utilities import bcolors, SpectraType
 
 from itertools import combinations
 
@@ -21,11 +21,11 @@ def CalculateStdSpectra(
     '''
 
     if spectra_type == None:
-        for s in spectra:
-            assert(isinstance(s, dict))
+        if not all([isinstance(s, dict) for s in spectra]):
+            raise TypeError(f'Spectra type was {spectra_type} but not all items in spectra list were dicts')
     else:
-        for s in spectra:
-            assert(isinstance(s, Well))
+        if not all([isinstance(s, Well) for s in spectra]):
+            raise TypeError(f'Spectra type was {spectra_type} but not all items in spectra list were Well objects')
         spectra = GetAllSpectraFromWells(spectra, spectra_type=spectra_type)
 
     df = pd.DataFrame(spectra)
@@ -45,11 +45,11 @@ def CalculateAvgSpectra(
     '''
 
     if spectra_type == None:
-        for s in spectra:
-            assert(isinstance(s, dict))
+        if not all([isinstance(s, dict) for s in spectra]):
+            raise TypeError(f'Spectra type was {spectra_type} but not all items in spectra list were dicts')
     else:
-        for s in spectra:
-            assert(isinstance(s, Well))
+        if not all([isinstance(s, Well) for s in spectra]):
+            raise TypeError(f'Spectra type was {spectra_type} but not all items in spectra list were Well objects')
         spectra = GetAllSpectraFromWells(spectra, spectra_type=spectra_type)
 
     df = pd.DataFrame(spectra)
@@ -152,8 +152,8 @@ if __name__ == "__main__":
     e3 = EKKOScanSummary('./data/AAB_1024_summary.cdxs')
     spectra3 = e3.get_CD_per_absorbance('A5')
 
-    dif = CalculateAvgSpectra([spectra1, spectra2, spectra3])
+    dif = CalculateStdSpectra([spectra1, spectra2, spectra3])
 
-    PickN([spectra1, spectra2, spectra3])
+    #PickN([spectra1, spectra2, spectra3], 2)
 
-    PlotMultipleSpectra([spectra1, spectra2, spectra3], ylimits=[-100,-140])
+    #PlotMultipleSpectra([spectra1, spectra2, spectra3], ylimits=[-100,-140])

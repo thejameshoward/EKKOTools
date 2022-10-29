@@ -139,7 +139,8 @@ def GetAllAnalytes(folder: Path) -> set[str]:
     '''
     if not isinstance(folder, Path):
         folder = Path(folder) # Eventually this should be a try/except but I don't know what exceptions we'll have
-    assert(folder.is_dir())
+        if not folder.is_dir():
+            raise ValueError(f'{folder} is not a directory.')
 
     analytes = set()
     ss = GetAllEKKOScanSummaries(folder)
