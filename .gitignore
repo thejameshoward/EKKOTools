@@ -1,7 +1,30 @@
+# Files
+.gitignore
 work.py
 tests.py
-/structures/
-/__pycache__/
-/build/
-/data_gen/
-/data_gen/*
+wolf.py
+makeDataFiles.py
+BINNED.txt
+BINNEDSpectraBasedOnAbs.txt
+ClassifyingSpectra.py
+CurrentAverageSpectra.csv
+determineEnantiomers.py
+NameSMilesPairsOfTrainingSet.csv
+NumericalClassification.csv
+spectrumpicker.py
+AnalytesWithErrors.txt
+out.xlsx
+presentation.py
+out.png
+
+# Folders
+structures/
+figures/
+data/
+build/
+wolf/
+
+# Caches
+.DS_Store
+EKKOTools/__pycache__/
+__pycache__/
