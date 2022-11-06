@@ -3,6 +3,8 @@ import re
 import numpy as np
 from pathlib import Path
 
+# Possible names for wells of a 94 well plate
+#TODO Add compatibility for 384 well plates
 possible_wells = ['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1',
                   'A2', 'B2', 'C2', 'D2', 'E2', 'F2', 'G2', 'H2',
                   'A3', 'B3', 'C3', 'D3', 'E3', 'F3', 'G3', 'H3',
@@ -15,7 +17,6 @@ possible_wells = ['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1',
                   'A10', 'B10', 'C10', 'D10', 'E10', 'F10', 'G10', 'H10',
                   'A11', 'B11', 'C11', 'D11', 'E11', 'F11', 'G11', 'H11',
                   'A12', 'B12', 'C12', 'D12', 'E12', 'F12', 'G12', 'H12']
-
 
 class Well():
     '''
@@ -79,11 +80,11 @@ class EKKOScanSummary():
 
         self.file = file
 
-        try:
-            self.content = pd.read_csv((self.file), header = None)
-            self.content = self.content[0].str.split('\t', expand=True)
-            assert(self.content[0][0] == "Hinds Instruments CD Reader")
-        except:
+
+        self.content = pd.read_csv((self.file), header = None)
+        self.content = self.content[0].str.split('\t', expand=True)
+
+        if self.content[0][0] != "Hinds Instruments CD Reader":
             raise ValueError(f"The file {self.file.name} is not formatted like a EKKO CD Wellplate Reader cdxs file")
 
         if self._has_scan_key():
@@ -91,7 +92,7 @@ class EKKOScanSummary():
         else:
             self.wells = [Well(scan, self.file) for scan in self.scan_list]
 
-        self.name = file.stem#Path(self.content[0][2]).stem
+        self.name = file.stem #Path(self.content[0][2]).stem
         self.date = self.content[0][1].split('   ')[0]
         self.time = self.content[0][1].split('   ')[1]
         self.scan_process = self.content[0][4]

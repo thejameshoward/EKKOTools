@@ -2,7 +2,7 @@
 from EKKOTools.EKKOScanFormats import EKKOScanSummary, Well
 from EKKOTools.plotting import PlotMultipleSpectra
 from EKKOTools.utilities import GetAllSpectraFromWells
-from utilities import bcolors, SpectraType
+from EKKOTools.utilities import bcolors, SpectraType
 
 from itertools import combinations
 
