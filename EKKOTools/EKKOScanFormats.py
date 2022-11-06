@@ -80,23 +80,44 @@ class EKKOScanSummary():
 
         self.file = file
 
-
         self.content = pd.read_csv((self.file), header = None)
         self.content = self.content[0].str.split('\t', expand=True)
 
         if self.content[0][0] != "Hinds Instruments CD Reader":
             raise ValueError(f"The file {self.file.name} is not formatted like a EKKO CD Wellplate Reader cdxs file")
 
-        if self._has_scan_key():
-            self.wells = self._assign_wells_from_scan_key()
-        else:
-            self.wells = [Well(scan, self.file) for scan in self.scan_list]
-
         self.name = file.stem #Path(self.content[0][2]).stem
         self.date = self.content[0][1].split('   ')[0]
         self.time = self.content[0][1].split('   ')[1]
         self.scan_process = self.content[0][4]
         self.well_plate_type = self.content[1][9]
+
+        # This section assigns maps analytes to wells
+        if self._has_scan_key():
+            self.wells = self._assign_wells_from_scan_key()
+        
+        else:
+            # Look in the well information table for anything
+            for i, row in self.content.iterrows():
+                if 'Well Info' in row[0]:
+                    well_info_table_start = i + 1
+                if 'End Annotation' in row[0]:
+                    well_info_table_end = i
+                
+            info_table = self.content.iloc[well_info_table_start + 1:well_info_table_end].set_index(0).replace('MT', np.NaN).dropna(axis=0,how='all').dropna(axis=1,how='all')
+            info_table.replace(np.NaN, None)
+
+            # If the well info dataframe is empty, just assign the wells with no analyte information
+            if info_table.empty:
+                self.wells = [Well(scan, self.file) for scan in self.scan_list]
+            else:
+                # Gets the well information table as a dict of columns, where each column has rows (letters of well plate)
+                d = {}
+                for column, row_analyte_dict in info_table.to_dict().items():
+                    row_letter, well_information = list(row_analyte_dict.keys())[0], list(row_analyte_dict.values())[0]
+                    well = f"{row_letter}{column}"
+                    d[well] = well_information
+                self.wells = self._assign_wells_from_dict(d)
 
     @property
     def blocksize(self):
@@ -190,32 +211,21 @@ class EKKOScanSummary():
         else:
             raise TypeError('Scan key file format not recognized')
 
+        return self._assign_wells_from_dict(analyte_map)
+
+    def _assign_wells_from_dict(self, d: dict):
         local_wells = [Well(scan, self.file) for scan in self.scan_list]
 
         for well in local_wells:
-            if well.name in analyte_map.keys():
-                well.analyte = analyte_map[well.name]
-
+            if well.name in d.keys():
+                well.analyte = d[well.name]
+        
         return local_wells
 
 
-
 if __name__ == "__main__":
-    from pprint import pprint
-    
-    v = EKKOScanSummary(Path('./data/ZA_1014-1015_summary.cdxs'))
-
-
-    for w in v.wells:
-        pprint(w.get_CD_per_abs())
-
-    print(v.get_wells())
-    print(f'FILE: {v.file}')
-    print(f'DATE: {v.date}')
-    print(f'TIME: {v.time}')
-    print(f'NAME: {v.name}')
-    print(f'SCAN_PROCESS: {v.scan_process}')
-    print(f'WELL PLATE TYPE: {v.well_plate_type}')
+    # Testing new analyte mapping from well information table
+    v = EKKOScanSummary(Path('./data/JRH_2109_summary.cdxs'))
 
     for w in v.wells:
         print(f'WELL: {w.name}    ANALYTE: {w.analyte}')
