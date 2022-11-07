@@ -13,7 +13,9 @@ Clone the repository and cd into the root directory which contains setup.py
 
 
 ## Usage
-`EKKOTools` uses a secondary file called a scan key which is a simple xlsx or csv spreadsheet that maps wells to particular analytes. This feature is optional, but if you want to use all the features of `EKKOTools`, the analytes must be mapped to the wells.
+`EKKOTools` reads the information from the "Well Info:" table at the bottom of scan summary files. This can be an easy way to map analyte names to the well, and doing so unlocks a number of features within `EKKOTools` like collecting all scans of a particular analyte from a large directory filled with scan summary files.
+
+You can overwrite the Well:information assigment as well. `EKKOTools` uses a secondary file called a scan key which is an xlsx or csv spreadsheet.
 
 The data folder should look something like this
 
@@ -22,7 +24,7 @@ The data folder should look something like this
     EKKOTools/data/JRH_2101_summary.cdxs
     EKKOTools/data/JRH_2101_summary_scankey.xlsx
 
-Each scan key should be formatted like so
+If you are using scan keys, they should be formatted like so
 
     A1,R-methylbenzylamine
     A2,S-methylbenzelamine
@@ -41,7 +43,4 @@ Then run the following code to see if all of your data is ingested correctly.
             print(f'{s.name.ljust(25)}\t{well.name}\t{well.analyte}')
 
 
-<br> 
-
-## Current Limitations and Future Features
-`EKKOTools` currently does not read the well labels section of the scan summary cdxs files. A future version will attempt to map the well labels to the EKKOTools.EKKOScanFormats.Well object, which has an attribute "analyte".
+<br>
