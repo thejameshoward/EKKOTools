@@ -1,6 +1,8 @@
 from scipy.signal import savgol_filter
 from .EKKOScanFormats import Well
 
+from numpy.linalg import LinAlgError
+
 def SmoothWellSpectra(
     well: Well, 
     window_length: int, 
@@ -45,14 +47,20 @@ def SmoothWellSpectra(
         window_length=window_length, 
         polyorder=polyorder)))
 
-    well.ABS = dict(zip(keys, savgol_filter(
-        abs, 
-        window_length=window_length, 
-        polyorder=polyorder)))
+    try:
+        well.ABS = dict(zip(keys, savgol_filter(
+            abs, 
+            window_length=window_length, 
+            polyorder=polyorder)))
+    except LinAlgError:
+        print(f"Could not smooth absorbance for {well.parent_scanfile} well {well.name}")
 
-    well.CD_PER_ABS = dict(zip(keys, savgol_filter(
-        cd_per_abs, 
-        window_length=window_length, 
-        polyorder=polyorder)))
+    try:
+        well.CD_PER_ABS = dict(zip(keys, savgol_filter(
+            cd_per_abs, 
+            window_length=window_length, 
+            polyorder=polyorder)))
+    except LinAlgError:
+        print(f"Could not smooth CD_PER_ABS for {well.parent_scanfile} well {well.name}")
 
     return well

@@ -1,7 +1,9 @@
-from EKKOTools.EKKOScanFormats import Well, EKKOScanSummary
+from .EKKOScanFormats import Well, EKKOScanSummary
 from pathlib import Path
 from enum import Enum
 import pandas as pd
+
+import copy
 
 class bcolors:
     HEADER = '\033[95m'
@@ -49,6 +51,38 @@ def GetSpectrumDifferencesWells(
     else:
         raise Exception
 
+def GetDifferenceWell(
+    w1: Well,
+    w2: Well) -> Well:
+    '''
+    returns w1 - w2
+    Gets a well which posesses spectral attributes (CD, absorbance, cd_per_abs)
+    which are the difference between the two input wells 
+    
+    Compare: str
+    values can be CD, CD_per_abs, or ABS
+    '''
+
+    # Make a new copy of the well
+    n = copy.deepcopy(w1)
+    
+    # Change the analyte
+    n.analyte = f'{w1.analyte} - {w2.analyte}'
+
+    cd1 = w1.CD
+    cd2 = w2.CD
+    n.CD = {x: cd1[x] - cd2[x] for x in cd1 if x in cd2}
+
+    abs1 = w1.ABS
+    abs2 = w2.ABS
+    n.ABS = {x: abs1[x] - abs2[x] for x in abs1 if x in abs2}
+
+    cd_per_abs_1 = w1.CD_PER_ABS
+    cd_per_abs_2 = w2.CD_PER_ABS
+    n.CD_PER_ABS = {x: cd_per_abs_1[x] - cd_per_abs_2[x] for x in cd_per_abs_1.keys() if x in cd_per_abs_2.keys()}
+
+    return n
+
 def GetAllEKKOScanSummaries(p: Path) -> list[EKKOScanSummary]:
     '''
     Returns all EKKOScanSummaries in a directory
@@ -92,13 +126,13 @@ def GetAllSpectraFromWells(
     as the values
     ''' 
 
+    if not isinstance(wells, list) and not isinstance(wells, tuple):
+        wells = [wells]
+
     # I can't remember why I wanted to limit this function to just a single analyte, but now theres an option to not
     if all_same_analyte:
-        try:
-            analytes = [q.analyte for q in wells]
-            assert(all(analytes[0] == x for x in analytes))
-        except:
-            print('WARNING: All analytes are not the same')
+        if len(set([x.analyte for x in wells])) != 1:
+            raise Exception("All wells must have the same analyte")
 
     spectra = []
 
@@ -170,6 +204,33 @@ def WriteWellsToXLSX(
         df[f'ABS_{well.name}'] = well.ABS.values()
 
     df.to_excel(filename, index=False)
+
+def GetAverageWell(wells: list[Well]) -> Well:
+    '''
+    Creates Well object with the average CD, ABS, and CD_PER_ABS
+    of the input Wells.
+    '''
+    if len(set([x.analyte for x in wells])) != 1:
+        raise Exception("All wells must have the same analyte")
+    analyte_name = wells[0].analyte
+
+    cds = pd.DataFrame([x.CD for x in wells]).transpose().mean(axis=1)
+    absorbances = pd.DataFrame([x.ABS for x in wells]).transpose().mean(axis=1)
+
+    #TODO Change hardcoded column names to accomodate different units
+    # Get dataframe with the CD and the ABS values
+    df = pd.concat([cds, absorbances], axis=1)
+    df.columns = ['CD-mDeg', 'ABS']
+
+    # Add the wavelengths
+    df.insert(0, column='WL', value=df.index.to_list())
+
+    # Put it in the strange format which the Well object requires
+    #TODO Handing a specifically formatted dataframe to Well is inflexible
+    data_row = pd.DataFrame(dict(zip(['WL', 'CD-mDeg', 'ABS'], [['Average'], ['NaN'], ['Nan']])))
+    df = pd.concat([data_row, df], axis=0)
+
+    return Well(df, parent_scanfile=None, analyte_name=analyte_name)
 
 #TODO
 def MakeCalibrationCurve():

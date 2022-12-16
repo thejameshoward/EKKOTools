@@ -18,6 +18,8 @@ possible_wells = ['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1',
                   'A11', 'B11', 'C11', 'D11', 'E11', 'F11', 'G11', 'H11',
                   'A12', 'B12', 'C12', 'D12', 'E12', 'F12', 'G12', 'H12']
 
+possible_wells.append('Average')
+
 class Well():
     '''
     Class for handling information within a well. Instatiation is not done

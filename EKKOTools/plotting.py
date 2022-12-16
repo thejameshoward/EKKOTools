@@ -1,10 +1,12 @@
 import math
 import matplotlib.pyplot as plt
 
+import numpy as np
+
 from pathlib import Path
 
-from EKKOTools.EKKOScanFormats import EKKOScanSummary, Well
-from EKKOTools.utilities import GetAllSpectraFromWells
+from .EKKOScanFormats import EKKOScanSummary, Well
+from .utilities import GetAllSpectraFromWells
 
 def PruneNAN(data: dict):
     '''Removes values from a dictionary in which the values or the keys are nan'''
@@ -172,9 +174,16 @@ def PlotAllSpectra(
     xlim: list = None, 
     ylim: list = None, 
     all_same_analyte = True, 
-    return_fig = False, 
+    return_fig: bool = False, 
+    plot_max: bool = False,
+    plot_wl: float = None,
+    plot_legend: bool = True,
     **kwargs):       
     '''Plots all the spectra (cd, abs, cd_per_abs) for a list of wells'''
+
+    def PlotPoint(ax, x, y, color='red'):
+        ax.plot(x,y, marker='o', color=color)
+        ax.text(x*1.05, y*1.05, s=f"{str(round(x,1))},{str(round(y,1))}")
 
     # Defining fonts
     plt.rcParams.update({'font.size': 11, 'font.sans-serif': 'Helvetica'})
@@ -187,28 +196,42 @@ def PlotAllSpectra(
 
     plt.suptitle(title, **label_font)
 
+    # For CD Plot
     axs[0].set_title("CD", **label_font)
     axs[0].set_xlabel("Wavelength (nm)", **label_font)
     axs[0].set_ylabel("CD (mdeg)", **label_font)
     if xlim is not None:
         axs[0].set_xlim(xlim)
-    for spectrum in GetAllSpectraFromWells(wells, spectra_type='cd', all_same_analyte=all_same_analyte):
-        spectrum = PruneDictionaryKeys(spectrum, xlim) # This is useful for automatically resizing Y-axis to the dataset
+    for well in wells:
+        spectrum = PruneDictionaryKeys(well.CD, xlim)
         x = [float(t) for t in spectrum.keys()] # This must be done because spectrum.keys() returns strings, not floats for wavelength
         y = [float(z) for z in spectrum.values()]
-        axs[0].plot(x,y)
+        axs[0].plot(x,y, label = well.analyte)
+        if plot_max:
+            PlotPoint(axs[0], x[np.argmax(y)], max(y))
+        if plot_wl is not None:
+            PlotPoint(axs[0], plot_wl, y[np.argwhere(np.array(x) == plot_wl).flatten().tolist()[0]])
+        if plot_legend:
+            axs[0].legend()
 
+    # For Absorbance Plot
     axs[1].set_title("Absorbance", **label_font)
     axs[1].set_xlabel("Wavelength (nm)", **label_font)
     axs[1].set_ylabel("Absorbance", **label_font)
     if xlim is not None:
         axs[1].set_xlim(xlim)
-    for spectrum in GetAllSpectraFromWells(wells, spectra_type='abs', all_same_analyte=all_same_analyte):
-        spectrum = PruneDictionaryKeys(spectrum, xlim)
+    for well in wells:
+        spectrum = PruneDictionaryKeys(well.CD, xlim)
         x = [float(t) for t in spectrum.keys()]
         y = [float(z) for z in spectrum.values()]
-        axs[1].plot(x,y)
-    
+        axs[1].plot(x,y, label = well.analyte)
+        if plot_max:
+            PlotPoint(axs[1], x[np.argmax(y)], max(y))
+        if plot_wl is not None:
+            PlotPoint(axs[1], plot_wl, y[np.argwhere(np.array(x) == plot_wl).flatten().tolist()[0]])
+        if plot_legend:
+            axs[1].legend()
+
     axs[2].set_title("G-factor", **label_font)
     axs[2].set_xlabel("Wavelength (nm)", **label_font)
     axs[2].set_ylabel("CD (mdeg / abs)", **label_font)
@@ -219,6 +242,10 @@ def PlotAllSpectra(
         x = [float(t) for t in spectrum.keys()]
         y = [float(z) for z in spectrum.values()]
         axs[2].plot(x,y)
+        if plot_max:
+            PlotPoint(axs[2], x[np.argmax(y)], max(y))
+        if plot_wl is not None:
+            PlotPoint(axs[2], plot_wl, y[np.argwhere(np.array(x) == plot_wl).flatten().tolist()[0]])
 
     if return_fig:
         return fig, axs

@@ -16,13 +16,20 @@ AnalytesWithErrors.txt
 out.xlsx
 presentation.py
 out.png
+pca_umap.py
+cluster_and_plot.py
+projection.csv
+temp.csv
+test_difference_well.py
+Binned_10-nov-2022.csv
 
 # Folders
 structures/
 figures/
-data/
 build/
 wolf/
+csvs/
+trash/
 
 # Caches
 .DS_Store

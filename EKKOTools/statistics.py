@@ -1,12 +1,11 @@
-
-from EKKOTools.EKKOScanFormats import EKKOScanSummary, Well
-from EKKOTools.plotting import PlotMultipleSpectra
-from EKKOTools.utilities import GetAllSpectraFromWells
-from EKKOTools.utilities import bcolors, SpectraType
-
-from itertools import combinations
-
 import pandas as pd
+from itertools import combinations
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+
+from .EKKOScanFormats import EKKOScanSummary, Well
+from .utilities import GetAllSpectraFromWells
+from .utilities import bcolors, SpectraType
 
 def CalculateStdSpectra(
     spectra: list[dict], 
@@ -110,6 +109,52 @@ def PickN(
     
     return best
 
+def PCAWells(
+    wells: list[Well], 
+    n_comp: int = 3, 
+    spectra_type: str = 'cd_per_abs', 
+    umap = False, 
+    scale = True) -> None:
+    '''
+    Performs PCA on the spectral data
+    '''
+    dfs = []
+
+    for well in wells:
+        if spectra_type.casefold() == 'cd':
+            spectrum = well.CD
+
+        elif spectra_type.casefold() == 'abs':
+            spectrum = well.ABS
+
+        elif spectra_type.casefold() == 'cd_per_abs':
+            spectrum = well.CD_PER_ABS
+
+        else:
+            raise Exception('Only CD, ABS, and CD_per_ABS are acceptable spectral types')
+
+        wls = [f"WL_{x}" for x in spectrum.keys()]
+        data = [float(x) for x in spectrum.values()]
+        df = pd.DataFrame([wls, data]).transpose().rename(columns={1:f'{well.analyte}'}).set_index(0).transpose()
+        dfs.append(df)
+
+    x = pd.concat(dfs)
+
+    if scale:
+        scaler = StandardScaler()
+        x[x.columns] = scaler.fit_transform(x[x.columns])
+
+    if umap:
+        from umap import UMAP
+        transformer = UMAP(n_components=n_comp)
+        labels = [f"UMAP_{x + 1}" for x in range(n_comp)]
+    else:
+        labels = [f"PC{x + 1}" for x in range(n_comp)]
+        transformer = PCA(n_components=n_comp)
+
+    
+    return pd.DataFrame(transformer.fit_transform(x), columns=labels, index=x.index) #columns=labels
+
 def _verbose_statistics_printer(
     analyte: str = None, 
     best_stddev: float = None, 
@@ -140,20 +185,3 @@ def _verbose_statistics_printer(
 
     # Print formatted string
     print(f'{analyte_name}:\tstddev: {stddev_print}\t\tavg: {avg_print}\trel_stddev: {percent_std_dev}\tnSpectra: {nSpectra}\tBest Wells: {best_wells_str}')
-
-
-if __name__ == "__main__":
-    e1 = EKKOScanSummary('./data/AAB_1023_summary.cdxs')
-    spectra1 = e1.get_CD_per_absorbance('A3')
-
-    e2 = EKKOScanSummary('./data/AAB_1019_summary.cdxs')
-    spectra2 = e2.get_CD_per_absorbance('A1')
-
-    e3 = EKKOScanSummary('./data/AAB_1024_summary.cdxs')
-    spectra3 = e3.get_CD_per_absorbance('A5')
-
-    dif = CalculateStdSpectra([spectra1, spectra2, spectra3])
-
-    #PickN([spectra1, spectra2, spectra3], 2)
-
-    #PlotMultipleSpectra([spectra1, spectra2, spectra3], ylimits=[-100,-140])
