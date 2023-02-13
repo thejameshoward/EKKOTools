@@ -26,10 +26,10 @@ class Well():
     directly, but rather from the EKKOScanSummary class which formats the 
     dataframe in a specific way for ingestion by the Well class.
     '''
-    def __init__(self, df: pd.DataFrame, parent_scanfile: str,  analyte_name = None):
+    def __init__(self, df: pd.DataFrame, parent_scanfile: Path,  analyte_name: str = None):
         self.df = df.reset_index()
         if not self.df["WL"][0] in possible_wells:
-            raise ValueError("Well format not understood")
+            raise ValueError(f"Well format not understood in {parent_scanfile.name}\tWell: {str(self.df['WL'][0])}")
         else:
             self.name = self.df["WL"][0]
             self.parent_scanfile = parent_scanfile
@@ -88,9 +88,9 @@ class EKKOScanSummary():
         if self.content[0][0] != "Hinds Instruments CD Reader":
             raise ValueError(f"The file {self.file.name} is not formatted like a EKKO CD Wellplate Reader cdxs file")
 
-        self.name = file.stem #Path(self.content[0][2]).stem
-        self.date = self.content[0][1].split('   ')[0]
-        self.time = self.content[0][1].split('   ')[1]
+        self.name = file.stem
+        # Added re.sub here to control for different amounts of spacing
+        self.date = re.sub("\s+", " ", self.content[0][1]).split(' ')[0]
         self.scan_process = self.content[0][4]
         self.well_plate_type = self.content[1][9]
 
@@ -105,7 +105,11 @@ class EKKOScanSummary():
                     well_info_table_start = i + 1
                 if 'End Annotation' in row[0]:
                     well_info_table_end = i
-                
+            
+            # Debug well info table
+            #print(well_info_table_start, well_info_table_end)
+            #print(self.content.iloc[well_info_table_start + 1:well_info_table_end])
+
             info_table = self.content.iloc[well_info_table_start + 1:well_info_table_end].set_index(0).replace('MT', np.NaN).dropna(axis=0,how='all').dropna(axis=1,how='all')
             info_table.replace(np.NaN, None)
 
@@ -216,6 +220,15 @@ class EKKOScanSummary():
         return self._assign_wells_from_dict(analyte_map)
 
     def _assign_wells_from_dict(self, d: dict):
+        #print(f'PRocess: {self.scan_process}')
+        #print(f'Length of scan list {len(self.scan_list)}')
+        #print(f'Blocksize: {self.blocksize}')
+        ##print(self.scandata)
+        #print(f'Length of scan data: {len(self.scandata)}')
+        #print(self.scan_list)
+        #for s in self.scan_list:
+        #    print(s)
+        #    print('\n')
         local_wells = [Well(scan, self.file) for scan in self.scan_list]
 
         for well in local_wells:
@@ -225,11 +238,4 @@ class EKKOScanSummary():
         return local_wells
 
 
-if __name__ == "__main__":
-    # Testing new analyte mapping from well information table
-    v = EKKOScanSummary(Path('./data/JRH_2109_summary.cdxs'))
 
-    for w in v.wells:
-        print(f'WELL: {w.name}    ANALYTE: {w.analyte}')
-
-    

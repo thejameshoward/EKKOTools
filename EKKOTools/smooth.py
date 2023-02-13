@@ -42,10 +42,13 @@ def SmoothWellSpectra(
     abs = [float(x) for x in abs.values()] 
     cd_per_abs = [float(x) for x in cd_per_abs.values()]
 
-    well.CD = dict(zip(keys, savgol_filter(
-        cd, 
-        window_length=window_length, 
-        polyorder=polyorder)))
+    try:
+        well.CD = dict(zip(keys, savgol_filter(
+            cd, 
+            window_length=window_length, 
+            polyorder=polyorder)))
+    except LinAlgError:
+        print(f"Could not smooth CD for {well.parent_scanfile} well {well.name}")
 
     try:
         well.ABS = dict(zip(keys, savgol_filter(

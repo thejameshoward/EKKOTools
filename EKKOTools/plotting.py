@@ -181,6 +181,12 @@ def PlotAllSpectra(
     **kwargs):       
     '''Plots all the spectra (cd, abs, cd_per_abs) for a list of wells'''
 
+    # Check if the plot wl is a string, if it is convert it
+    if isinstance(plot_wl, str):
+        plot_wl = float(plot_wl)
+    elif isinstance(plot_wl, list):
+        raise NotImplementedError('Plotting multiple wavelengths as a list is not supported yet')
+
     def PlotPoint(ax, x, y, color='red'):
         ax.plot(x,y, marker='o', color=color)
         ax.text(x*1.05, y*1.05, s=f"{str(round(x,1))},{str(round(y,1))}")
@@ -221,7 +227,7 @@ def PlotAllSpectra(
     if xlim is not None:
         axs[1].set_xlim(xlim)
     for well in wells:
-        spectrum = PruneDictionaryKeys(well.CD, xlim)
+        spectrum = PruneDictionaryKeys(well.ABS, xlim)
         x = [float(t) for t in spectrum.keys()]
         y = [float(z) for z in spectrum.values()]
         axs[1].plot(x,y, label = well.analyte)
@@ -237,15 +243,17 @@ def PlotAllSpectra(
     axs[2].set_ylabel("CD (mdeg / abs)", **label_font)
     if xlim is not None:
         axs[2].set_xlim(xlim)
-    for spectrum in GetAllSpectraFromWells(wells, spectra_type='cd_per_abs', all_same_analyte=all_same_analyte):
-        spectrum = PruneDictionaryKeys(spectrum, xlim)
+    for well in wells:
+        spectrum = PruneDictionaryKeys(well.CD_PER_ABS, xlim)
         x = [float(t) for t in spectrum.keys()]
         y = [float(z) for z in spectrum.values()]
-        axs[2].plot(x,y)
+        axs[2].plot(x,y, label = well.analyte)
         if plot_max:
             PlotPoint(axs[2], x[np.argmax(y)], max(y))
         if plot_wl is not None:
             PlotPoint(axs[2], plot_wl, y[np.argwhere(np.array(x) == plot_wl).flatten().tolist()[0]])
+        if plot_legend:
+            axs[2].legend()
 
     if return_fig:
         return fig, axs

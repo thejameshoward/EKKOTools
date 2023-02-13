@@ -22,7 +22,7 @@ class SpectraType(Enum):
     ABS = 'abs'
     CD_PER_ABS = 'cd_per_abs'
 
-def GetSpectrumDifferencesWells(
+def GetSpectrumDifference(
     w1: Well,
     w2: Well,
     compare: SpectraType = SpectraType.CD) -> dict:
@@ -55,33 +55,43 @@ def GetDifferenceWell(
     w1: Well,
     w2: Well) -> Well:
     '''
-    returns w1 - w2
-    Gets a well which posesses spectral attributes (CD, absorbance, cd_per_abs)
-    which are the difference between the two input wells 
+    Calculates the well which posesses spectral attributes (CD, absorbance, cd_per_abs)
+    which are the difference between the two input wells (well 1 - well 2)
     
-    Compare: str
-    values can be CD, CD_per_abs, or ABS
+    Parameters
+    ----------
+    w1: Well
+        Well object which has the CD, ABS, and CD_PER_ABS properties
+
+    w2: Well
+        Well object which has the CD, ABS, and CD_PER_ABS properties
+
+    Returns
+    ----------
+    newWell: Well
+        A Well object with the difference between the spectral attributes
+        CD, ABS, and CD_PER_ABS
     '''
 
     # Make a new copy of the well
-    n = copy.deepcopy(w1)
+    newWell = copy.deepcopy(w1)
     
     # Change the analyte
-    n.analyte = f'{w1.analyte} - {w2.analyte}'
+    newWell.analyte = f'{w1.analyte} - {w2.analyte}'
 
     cd1 = w1.CD
     cd2 = w2.CD
-    n.CD = {x: cd1[x] - cd2[x] for x in cd1 if x in cd2}
+    newWell.CD = {x: cd1[x] - cd2[x] for x in cd1 if x in cd2}
 
     abs1 = w1.ABS
     abs2 = w2.ABS
-    n.ABS = {x: abs1[x] - abs2[x] for x in abs1 if x in abs2}
+    newWell.ABS = {x: abs1[x] - abs2[x] for x in abs1 if x in abs2}
 
     cd_per_abs_1 = w1.CD_PER_ABS
     cd_per_abs_2 = w2.CD_PER_ABS
-    n.CD_PER_ABS = {x: cd_per_abs_1[x] - cd_per_abs_2[x] for x in cd_per_abs_1.keys() if x in cd_per_abs_2.keys()}
+    newWell.CD_PER_ABS = {x: cd_per_abs_1[x] - cd_per_abs_2[x] for x in cd_per_abs_1.keys() if x in cd_per_abs_2.keys()}
 
-    return n
+    return newWell
 
 def GetAllEKKOScanSummaries(p: Path) -> list[EKKOScanSummary]:
     '''
@@ -207,12 +217,25 @@ def WriteWellsToXLSX(
 
 def GetAverageWell(wells: list[Well]) -> Well:
     '''
-    Creates Well object with the average CD, ABS, and CD_PER_ABS
-    of the input Wells.
+
+    Get's the well which has the average CD, ABS, and 
+    CD_PER_ABS of the input wells.
+
+    Parameters
+    ----------
+    wells: list[Well]
+        List of Well objects which will be averaged
+
+    Returns
+    ----------
+     Well
+        The average well of all the input wells
+
     '''
     if len(set([x.analyte for x in wells])) != 1:
         raise Exception("All wells must have the same analyte")
-    analyte_name = wells[0].analyte
+        
+    analyte_name = wells[0].analyte  + '_avg'
 
     cds = pd.DataFrame([x.CD for x in wells]).transpose().mean(axis=1)
     absorbances = pd.DataFrame([x.ABS for x in wells]).transpose().mean(axis=1)
@@ -232,6 +255,19 @@ def GetAverageWell(wells: list[Well]) -> Well:
 
     return Well(df, parent_scanfile=None, analyte_name=analyte_name)
 
+def DetermineLambdaMaxRange(well: Well, range: list[float, float]) -> float:
+    '''
+    Given a well, determine the lambda max (wavelength)
+    within a certain range
+    '''
+    possible_wl = [x for x in well.CD.keys() if float(x) <= range[1] and float(x) >= range[0]]
+
+    # Changed to include abs() function for negative CD spectra
+    results = {p: abs(well.CD[p]) for p in possible_wl}
+
+    return max(results, key=results.get) 
+
+
 #TODO
 def MakeCalibrationCurve():
-    pass
+    raise NotImplementedError
