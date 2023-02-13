@@ -36,11 +36,28 @@ Then run the following code to see if all of your data is ingested correctly.
 
 <br>
 
-    ss = GetAllEKKOScanSummaries(Path('./data/'))
+    ss = GetAllEKKOScanSummaries(Path('./examples/data/'))
         
     for s in ss:
         for well in s.wells:
             print(f'{s.name.ljust(25)}\t{well.name}\t{well.analyte}')
 
-
 <br>
+
+## Selecting similar spectra and finding the average
+To get the average of 3 spectra which are closest, we calculate the relative standard deviation between all combinations of the spectra. The lowest relative std. dev. are the spectra which are selected with the `PickN` function. These spectra are then averaged and plotted.
+
+    # Find the data files
+    ss = GetAllEKKOScanSummaries(Path('./examples/data/'))
+        
+    # Get all of the Wells of a particular analyte
+    wells = GetAllWells(ss, analyte='IH5)
+
+    # Pick the 3 closest Wells at the wavelength 520 nm
+    wells = PickN(l = wells, n = 3, wl = 520, spectra_type = 'CD_per_abs')
+
+    # Get the average of Wells
+    avg = GetAverageWell(wells)
+
+    # Plot the CD, ABS, and G-factor spectra of the average well
+    PlotAllSpectra(avg, title="Average Spectra of IH5")
