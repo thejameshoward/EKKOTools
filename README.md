@@ -27,7 +27,7 @@ The data folder should look something like this
 If you are using scan keys, they should be formatted like so
 
     A1,R-methylbenzylamine
-    A2,S-methylbenzelamine
+    A2,S-methylbenzylamine
     A3,analyte3
     ...
 
