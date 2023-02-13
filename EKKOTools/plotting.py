@@ -180,6 +180,9 @@ def PlotAllSpectra(
     plot_legend: bool = True,
     **kwargs):       
     '''Plots all the spectra (cd, abs, cd_per_abs) for a list of wells'''
+    # Check if a single well was given
+    if isinstance(wells, Well):
+        wells = [wells]
 
     # Check if the plot wl is a string, if it is convert it
     if isinstance(plot_wl, str):

@@ -1,6 +1,7 @@
 from .EKKOScanFormats import Well, EKKOScanSummary
 from pathlib import Path
 from enum import Enum
+
 import pandas as pd
 
 import copy
@@ -12,44 +13,77 @@ class bcolors:
     OKGREEN = '\033[92m'
     WARNING = '\033[93m'
     FAIL = '\033[91m'
-    ENDC = '\033[0m'
     BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-    NONE = ''
+    ENDC = '\033[0m'
 
+#TODO Change implementation so that SpectraType is used to distinguish spectra
 class SpectraType(Enum):
     CD = 'cd'
     ABS = 'abs'
     CD_PER_ABS = 'cd_per_abs'
 
-def GetSpectrumDifference(
-    w1: Well,
-    w2: Well,
+def _getSpectrumDifference(
+    d1: dict,
+    d2: dict,
     compare: SpectraType = SpectraType.CD) -> dict:
     '''
-    Gets the difference of some property the CD spectra of two EKKO formatted wells. 
+    Calculates the difference between two spectra which are formatted
+    as dictionaries. The dictionary keys are the wavelengths which
+    are measured in the spectrum and the values are the intensities
+    of the spectral signal.
     
-    Compare: str
-    values can be CD, CD_per_abs, or ABS
+    Parameters
+    ----------
+    d1: dict
+        Dictionary with the wavelengths as keys and the spectral signal
+        as its values.
+
+    d2: dict
+        Dictionary with the wavelengths as keys and the spectral signal
+        as its values.
+
+    Returns
+    ----------
+    dict
     '''
+    # Check the dictionaries are equal
+    #TODO Add support for unequal length measurements (i.e., change of method in EKKO spectrometer)
+    if d1.keys() != d2.keys():
+        raise ValueError('Spectra must be measured have equal wavelengths measured.')
 
-    if compare.casefold() == 'cd':
-        cd1 = w1.get_CD()
-        cd2 = w2.get_CD()
-        return {x: cd1[x] - cd2[x] for x in cd1 if x in cd2}
+    return {x: d1[x] - d2[x] for x in d1 if x in d2}
 
-    elif compare.casefold() == 'abs':
-        abs1 = w1.get_abs()
-        abs2 = w2.get_abs()
-        return {x: abs1[x] - abs2[x] for x in abs1 if x in abs2}
 
-    elif compare.casefold() == 'cd_per_abs':
-        cd_per_abs_1 = w1.get_CD_per_abs()
-        cd_per_abs_2 = w2.get_CD_per_abs()
-        return {x: cd_per_abs_1[x] - cd_per_abs_2[x] for x in cd_per_abs_1.keys() if x in cd_per_abs_2.keys()}
+def getSpectrumSum(
+    d1: dict,
+    d2: dict,
+    compare: SpectraType = SpectraType.CD) -> dict:
+    '''
+    Calculates the sum between two spectra which are formatted
+    as dictionaries. The dictionary keys are the wavelengths which
+    are measured in the spectrum and the values are the intensities
+    of the spectral signal.
+    
+    Parameters
+    ----------
+    d1: dict
+        Dictionary with the wavelengths as keys and the spectral signal
+        as its values.
 
-    else:
-        raise Exception
+    d2: dict
+        Dictionary with the wavelengths as keys and the spectral signal
+        as its values.
+
+    Returns
+    ----------
+    dict
+    '''
+    # Check the dictionaries are equal
+    #TODO Add support for unequal length measurements (i.e., change of method in EKKO spectrometer)
+    if d1.keys() != d2.keys():
+        raise ValueError('Spectra must be measured have equal wavelengths measured.')
+
+    return {x: d1[x] + d2[x] for x in d1 if x in d2}
 
 def GetDifferenceWell(
     w1: Well,
@@ -81,15 +115,16 @@ def GetDifferenceWell(
 
     cd1 = w1.CD
     cd2 = w2.CD
-    newWell.CD = {x: cd1[x] - cd2[x] for x in cd1 if x in cd2}
+    #newWell.CD = {x: cd1[x] - cd2[x] for x in cd1 if x in cd2}
+    newWell.CD = _getSpectrumDifference(cd1,cd2)
 
     abs1 = w1.ABS
     abs2 = w2.ABS
-    newWell.ABS = {x: abs1[x] - abs2[x] for x in abs1 if x in abs2}
+    newWell.ABS = _getSpectrumDifference(abs1,abs2)
 
-    cd_per_abs_1 = w1.CD_PER_ABS
-    cd_per_abs_2 = w2.CD_PER_ABS
-    newWell.CD_PER_ABS = {x: cd_per_abs_1[x] - cd_per_abs_2[x] for x in cd_per_abs_1.keys() if x in cd_per_abs_2.keys()}
+    cd_per_abs1 = w1.CD_PER_ABS
+    cd_per_abs2 = w2.CD_PER_ABS
+    newWell.CD_PER_ABS = _getSpectrumDifference(cd_per_abs1, cd_per_abs2)
 
     return newWell
 

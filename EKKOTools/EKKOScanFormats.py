@@ -18,6 +18,9 @@ possible_wells = ['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1',
                   'A11', 'B11', 'C11', 'D11', 'E11', 'F11', 'G11', 'H11',
                   'A12', 'B12', 'C12', 'D12', 'E12', 'F12', 'G12', 'H12']
 
+# Added average to possible wells as this indicates
+# that a Well was created by averaging multiple wells
+# and was not directly measured
 possible_wells.append('Average')
 
 class Well():
@@ -71,6 +74,11 @@ class Well():
         return {wl: float(cd[wl] / abs[wl]) for wl in self.df.index}
 
 class EKKOScanSummary():
+    '''
+    Class for handling EKKO ScanSummary files (.cdxs).
+
+    Instantiate with a pathlib Path object or string.
+    '''
     def __init__(self, file: Path):
 
         if not isinstance(file, Path):
