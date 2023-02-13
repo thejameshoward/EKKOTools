@@ -184,26 +184,47 @@ def GetAllSpectraFromWells(
     for well in wells:
 
         if spectra_type.casefold() == 'cd':
-            spectrum = well.CD
+            spectra.append(well.CD)
 
         elif spectra_type.casefold() == 'abs':
-            spectrum = well.ABS
+            spectra.append(well.ABS)
 
         elif spectra_type.casefold() == 'cd_per_abs':
-            spectrum = well.CD_PER_ABS
+            spectra.append(well.CD_PER_ABS)
 
         else:
             raise Exception('Only CD, ABS, and CD_per_ABS are acceptable spectral types')
-
-        spectra.append(spectrum)
 
     return spectra
 
 def GetAllWells(
     scan_summaries: list = None,
     analyte: str = '') -> list[Well]:
-    '''Searches through all scan summaries for wells with a particular analyte'''
+    '''
+    Finds all the Well objects within a list of EKKOScanSummary objects
+    that possess an analyte property (Well.analyte) which is equal to the
+    analyte string passed to the funciton.
+    
+    Parameters
+    ----------
+    scan_summaries: list[EKKOScanSummary]
+        List of EKKOScanSummary objects which is to be searched
+
+    analyte: str
+        Name of the analyte of interest
+
+    Returns
+    ----------
+    wells: list[Well]
+        A list of Well objects which possess the <analyte> str
+    '''
+
+    # Check if a single EKKOScanSummary was passed
+    if isinstance(scan_summaries, EKKOScanSummary):
+        scan_summaries = [scan_summaries]
+
     wells = []
+
     for summary in scan_summaries:
         for well in summary.wells:
             if well.analyte == analyte:
@@ -212,10 +233,24 @@ def GetAllWells(
 
 def GetAllAnalytes(folder: Path) -> set[str]:
     '''
-    Gets all of the analytes of all the scan summaries in 
-    the provided directory. Returns a set of strings 
-    of all analyte names.
+    Finds all the Well objects within a list of EKKOScanSummary objects
+    that possess an analyte property (Well.analyte) which is equal to the
+    analyte string passed to the funciton.
+    
+    Parameters
+    ----------
+    folder: Path
+        Folder which contains the datafiles from the EKKO spectrometer
+
+    Returns
+    ----------
+    analytes: set
+        A set of all analyte strings
     '''
+    # If given a single EKKOScanSummary, return all the analytes
+    if isinstance(folder, EKKOScanSummary):
+        return set([x.analyte for x in folder.wells])
+
     if not isinstance(folder, Path):
         folder = Path(folder) # Eventually this should be a try/except but I don't know what exceptions we'll have
         if not folder.is_dir():
